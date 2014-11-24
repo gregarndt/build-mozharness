@@ -19,6 +19,7 @@ from mozharness.base.script import (
     BaseScript,
     PreScriptAction,
 )
+from mozharness.base.errors import TarErrorList, ZipErrorList
 from mozharness.base.vcs.vcsbase import VCSMixin
 from mozharness.mozilla.blob_upload import BlobUploadMixin, blobupload_config_options
 from mozharness.mozilla.testing.errors import LogcatErrorList
@@ -187,6 +188,37 @@ class B2GEmulatorTest(TestingMixin, TooltoolMixin, VCSMixin, BaseScript, BlobUpl
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
+    def download_and_extract_xre(self, url, parent_dir):
+        """
+        Hack to do the right thing if the xre sdk is bz2 or zip.  Only
+        needed right now for taskcluster work.  Need to integrate better in
+        mozharness
+        """
+        dirs = self.query_abs_dirs()
+        zipfile = self.download_proxied_file(url, parent_dir=dirs['abs_work_dir'],
+                                             error_level=FATAL)
+        m = re.search('\.tar\.(bz2|gz)$', zipfile)
+        if m:
+            command = self.query_exe('tar', return_type='list')
+            tar_cmd = "jxf"
+            if m.group(1) == "gz":
+                tar_cmd = "zxf"
+            command.extend([tar_cmd, zipfile])
+            self.run_command(command,
+                             cwd=parent_dir,
+                             error_list=TarErrorList,
+                             halt_on_failure=True,
+                             fatal_exit_code=3)
+        else:
+            command = self.query_exe('unzip', return_type='list')
+            command.extend(['-q', '-o', zipfile])
+            self.run_command(command,
+                             cwd=parent_dir,
+                             error_list=ZipErrorList,
+                             halt_on_failure=True,
+                             fatal_exit_code=3)
+
+
     def download_and_extract(self):
         super(B2GEmulatorTest, self).download_and_extract()
         dirs = self.query_abs_dirs()
@@ -202,7 +234,7 @@ class B2GEmulatorTest(TestingMixin, TooltoolMixin, VCSMixin, BaseScript, BlobUpl
             self.install_minidump_stackwalk()
 
         self.mkdir_p(dirs['abs_xre_dir'])
-        self._download_unzip(self.config['xre_url'],
+        self.download_and_extract_xre(self.config['xre_url'],
                              dirs['abs_xre_dir'])
 
         if self.config.get('busybox_url'):
