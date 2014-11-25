@@ -300,7 +300,7 @@ class B2GEmulatorTest(TestingMixin, TooltoolMixin, VCSMixin, BaseScript, BlobUpl
             'logcat_dir': dirs['abs_work_dir'],
             'modules_dir': dirs['abs_modules_dir'],
             'remote_webserver': self.config['remote_webserver'],
-            'xre_path': os.path.join(dirs['abs_xre_dir'], 'bin'),
+            'xre_path': os.path.join(dirs['abs_xre_dir'], 'b2g'),
             # XXX test_manifest is no longer used by the in-tree config.
             # Remove it when Gecko 35 is no longer in tbpl.
             'test_manifest': self.test_manifest,
