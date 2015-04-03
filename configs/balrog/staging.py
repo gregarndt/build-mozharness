@@ -1,7 +1,7 @@
 config = {
     'balrog_servers': [
         {
-            'balrog_api_root': 'https://aus4-admin-dev.allizom.org/api',
+            'balrog_api_root': 'http://balrog/api',
             'ignore_failures': False,
             'balrog_usernames': {
                 'b2g': 'stage-b2gbld',
